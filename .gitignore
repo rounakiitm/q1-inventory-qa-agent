@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+data/agent.db
+data/uploads/
+eval_report.md
+.pytest_cache/
+.ruff_cache/
+
+.github/workflows/
+supabase/.temp/

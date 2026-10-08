@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Inventory Intelligence — Excel Q&A Agent</title>
+<link rel="stylesheet" href="app.css?v=6"/>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+<div id="authGate" class="authgate" hidden>
+  <div class="authcard">
+    <div class="authbrand">
+      <div class="logo">▲</div>
+      <h1>Inventory Intelligence</h1>
+      <p class="muted">Sign in to continue</p>
+    </div>
+    <form id="authForm" class="authform">
+      <label>Email<input id="authEmail" type="email" required autocomplete="username" placeholder="you@company.com"/></label>
+      <label>Password<input id="authPassword" type="password" required autocomplete="current-password" minlength="6" placeholder="••••••••"/></label>
+      <div class="authactions">
+        <button type="submit" id="authSignIn">Sign in</button>
+        <button type="button" id="authSignUp" class="ghost">Create account</button>
+      </div>
+      <p id="authMsg" class="uploadmsg muted"></p>
+    </form>
+  </div>
+</div>
+
+<div class="shell" id="appShell">
+  <aside class="nav">
+    <div class="brand">
+      <div class="logo">▲</div>
+      <div>
+        <h1>Inventory Intelligence</h1>
+        <p>Excel Q&amp;A · gemini</p>
+      </div>
+    </div>
+
+    <div class="navsection sessionpanel">
+      <div class="sessionhead">
+        <span class="sectionlabel">Sessions</span>
+        <button id="newSession" class="ghost sm" title="New session">+ New</button>
+      </div>
+      <div id="sessionList" class="sessionlist"><div class="muted">Loading…</div></div>
+    </div>
+
+    <div class="navfoot">
+      <div class="sectionlabel">Model</div>
+      <select id="modelSelect" class="modelselect" title="Low-cost Gemini models"></select>
+      <div class="footmeta">
+        <span id="modelBadge" class="badge">…</span>
+        <span id="usageTotals" class="muted"></span>
+      </div>
+      <div class="authuser" id="authUserRow" hidden>
+        <span id="authEmailLabel" class="muted"></span>
+        <button type="button" id="authSignOut" class="ghost sm">Sign out</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="workspace">
+    <header class="topbar">
+      <nav class="pagenav">
+        <a href="#/chat" class="navlink active" data-page="chat">⟟ Chat</a>
+        <a href="#/data" class="navlink" data-page="data">▦ Dataset</a>
+        <a href="#/notebook" class="navlink" data-page="notebook">⌗ Notebook</a>
+        <a href="#/about" class="navlink" data-page="about">◎ About</a>
+      </nav>
+      <div class="topbar-right">
+        <p id="sessionHint" class="muted sessionhint">No session yet</p>
+        <button type="button" id="authSignOutTop" class="ghost sm logoutbtn" hidden title="Sign out">Sign out</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- CHAT PAGE -->
+      <section id="page-chat" class="page active">
+        <header class="pagehead">
+          <h2>Ask your inventory</h2>
+        </header>
+        <div class="docbar">
+          <span class="sectionlabel" style="margin:0">Attached to this session</span>
+          <div id="sessionDocs" class="docchips"></div>
+          <select id="attachSelect" class="attachselect" title="Attach a workbook from the library">
+            <option value="">+ Attach document…</option>
+          </select>
+        </div>
+        <div id="chat" class="chat"></div>
+        <div class="askwrap">
+          <div id="mentionMenu" class="mentionmenu" hidden></div>
+          <form id="askForm" class="askbar">
+            <input id="askInput" autocomplete="off" placeholder="Ask a question — type @ to mention a document, e.g. @Inventory what is total stock?"/>
+            <button type="submit" id="askBtn">Ask ▸</button>
+            <button type="button" id="stopBtn" class="stopbtn" hidden>Stop</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- DATA PAGE -->
+      <section id="page-data" class="page datapage">
+        <header class="pagehead"><h2>Dataset library</h2></header>
+        <p class="muted" style="margin-bottom:14px">Uploads are kept in the library. Attach the ones you want to a chat session — the agent only answers from attached docs.</p>
+
+        <details class="datacollapse" open>
+          <summary><span class="chev">▸</span> Upload workbook</summary>
+          <div class="datacollapse-body uploadpanel">
+            <p class="muted">Any tabular <code>.xlsx</code> / <code>.xls</code> — schema inferred automatically. Existing workbooks stay.</p>
+            <form id="uploadForm" class="uploadbar">
+              <input id="uploadFile" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" required />
+              <button type="submit" id="uploadBtn">Upload ▸</button>
+            </form>
+            <div id="uploadMsg" class="uploadmsg muted"></div>
+          </div>
+        </details>
+
+        <div id="docLibrary" class="doclibrary"></div>
+
+        <details class="datacollapse" open>
+          <summary><span class="chev">▸</span> Preview <span id="dataFile" class="badge">…</span></summary>
+          <div class="datacollapse-body">
+            <div id="dataMeta" class="cards"></div>
+            <div id="dataTable" class="tablewrap"></div>
+          </div>
+        </details>
+
+        <details class="datacollapse">
+          <summary><span class="chev">▸</span> Integrity audit</summary>
+          <div class="datacollapse-body">
+            <pre id="dataAudit" class="audit"></pre>
+          </div>
+        </details>
+      </section>
+
+      <!-- NOTEBOOK PAGE -->
+      <section id="page-notebook" class="page">
+        <header class="pagehead"><h2>Session notebook</h2>
+          <a id="nbDownload" class="ghost" href="#" download="session.ipynb">⬇ Export .ipynb</a></header>
+        <p class="muted">Every executed code cell from the current session, in order.</p>
+        <div id="notebook"></div>
+      </section>
+
+      <!-- ABOUT PAGE -->
+      <section id="page-about" class="page">
+        <header class="pagehead"><h2>About</h2></header>
+        <div class="about">
+          <p><b>Inventory Intelligence</b> is an agentic Q&A layer over an Excel inventory:
+          it writes and executes sandboxed pandas code, looks up external context via
+          grounded search, renders charts, and answers with cited numbers.</p>
+          <ul>
+            <li>Sandboxed code execution (AST gate · 15 s timeout · no network)</li>
+            <li>User-selectable low-cost models (3.1-flash-lite · 3.5-flash-lite · 3.5-flash)</li>
+            <li>Supabase Auth + Postgres (prod) · SQLite fallback (local/dev)</li>
+            <li>SSE streaming: watch every tool call as it happens</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="app.js?v=7"></script>
+</body>
+</html>

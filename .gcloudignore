@@ -1,0 +1,15 @@
+.venv
+__pycache__
+*.pyc
+.git
+.pytest_cache
+.mypy_cache
+data/agent.db
+data/uploads
+.env
+.cloudrun-env.yaml
+*.md
+.github
+tests
+scripts
+supabase/.temp

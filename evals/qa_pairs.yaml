@@ -1,0 +1,56 @@
+# Ground-truth Q&A pairs for the eval harness.
+# Ground truths computed directly from the sample xlsx (46 products).
+# check types:
+#   numeric  - last number in the answer must match `expected` within `tol` %
+#   contains - answer text must include all `expected` substrings (case-insensitive)
+#   any_tool - the trace must include a call to the named tool
+- q: "Which product has the highest hand-in-stock?"
+  check: { type: contains, expected: ["Smartphone"] }
+  tool_expect: run_dataframe_code
+
+- q: "Which product has the lowest hand-in-stock?"
+  check: { type: contains, expected: ["External DVD Drive"] }
+  tool_expect: run_dataframe_code
+
+- q: "What is the total cost price of all stock currently in hand?"
+  check: { type: numeric, expected: 359760, tol: 1.0 }
+  tool_expect: run_dataframe_code
+
+- q: "Bottom 5 products by stock turnover ratio, defined as units sold / opening stock."
+  check:
+    type: contains
+    expected: ["Headphones", "USB Hub"]
+  tool_expect: run_dataframe_code
+
+- q: "How many products cost more than $500 per unit?"
+  check: { type: numeric, expected: 4, tol: 0.0 }
+  tool_expect: run_dataframe_code
+
+- q: "What is the average number of units sold across all products?"
+  check: { type: numeric, expected: 6.8261, tol: 1.0 }
+  tool_expect: run_dataframe_code
+
+- q: "Does the dataset pass the integrity check: opening + stock in - units sold == hand in stock?"
+  check: { type: contains, expected: ["12"] }
+  tool_expect: run_dataframe_code
+
+- q: "What does 'hand-in-stock' mean in inventory management terms?"
+  check: { type: any_tool, tool: web_search }
+  tool_expect: web_search
+
+- q: "What is the highest 'Cost Price Total (USD)' value in the dataset?"
+  check: { type: numeric, expected: 72000, tol: 0.0 }
+  tool_expect: run_dataframe_code
+
+- q: "Using the turnover ratio you defined earlier, is the slowest-turnover product also the one with the least stock in hand?"
+  follow_up: true
+  check: { type: contains, expected: ["Headphones"] }
+  tool_expect: run_dataframe_code
+
+- q: "Plot the top 5 products by hand-in-stock as a chart."
+  check: { type: any_tool, tool: make_chart }
+  tool_expect: make_chart
+
+- q: "How many product names start with the letter 'U'?"
+  check: { type: numeric, expected: 4, tol: 0.0 }
+  tool_expect: run_dataframe_code
